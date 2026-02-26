@@ -1,0 +1,10 @@
+{
+    "name": "app/mon-mvc",
+    "description": "Projet MVC pédagogique",
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "require": {}
+}
