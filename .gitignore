@@ -1,2 +1,5 @@
+# f=Fichiers d'environenement(ne jamais versionner)
+.env.local
+# Fichiers sensibles
 composer.lock
 /vendor/
