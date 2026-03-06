@@ -52,25 +52,35 @@ abstract class Controller
             $this->redirect($redirectTo);
         }
     }
-    //message flach affiche message quand tu redifrection post formulaire redirige a la page
-
+    /**
+     * Ajoute un message flash.
+     * Types recommandés : success, info, warning, error
+     */
     protected function setFlash(string $type, string $message): void
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
             session_start();
         }
-        $_SESSION['_flashes'][$type][] = $message;
+        $_SESSION['_flash'][] = [
+            'type' => $type,
+            'msg' => $message,
+        ];
     }
-
-    protected function getFlashes(): array
+    /**
+     * Récupère puis supprime les messages flash.
+     * (Optionnel si tu relies uniquement sur le partial)
+     */
+    protected function getFlash(): array
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
             session_start();
         }
-        $flashes = $_SESSION['_flashes'] ?? [];
-        unset($_SESSION['_flashes']);
+        $flashes = $_SESSION['_flash'] ?? [];
+        unset($_SESSION['_flash']);
         return $flashes;
     }
+
+
     //si la page es tmanquant gere les message erreur  abord gere la redirection vers les erreurs
     protected function abort(int $statusCode = 404, string $message = ''): void
     {

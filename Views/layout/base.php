@@ -1,6 +1,10 @@
 <?php
+//extrait chemin url contient tout les url dans le navigateur/ creation. request url
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
 $currentPath = rtrim($currentPath, '/') ?: '/';
+// /creation/12 debug? =1 parse url = enleve retire la query debug creation/12
+//creation/ => /cration on normalise on adopte un format sur tout l url
+
 
 $isHome = ($currentPath === '/');
 $bodyClass = $isHome ? 'is-home' : 'is-page';
