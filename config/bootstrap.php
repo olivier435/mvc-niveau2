@@ -90,6 +90,10 @@ define('DB_DSN', sprintf(
     DB_NAME,
     DB_CHARSET,
 ));
+
+define('VIEW_PATH', APP_ROOT . '/Views');
+//si je change dossir template je chane views par template
+//definie constante
 /**
  * contaxte applicative 
  */
