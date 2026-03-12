@@ -2,28 +2,32 @@
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
-$flashes = $_SESSION['_flash'] ?? [];
-unset($_SESSION['_flash']);
+ 
+$flashes = $_SESSION['_flashes'] ?? [];
+unset($_SESSION['_flashes']);
+ 
 $map = [
-    'error' => 'danger',
+    'error'   => 'danger',
     'success' => 'success',
     'warning' => 'warning',
-    'info' => 'info',
+    'info'    => 'info',
 ];
 ?>
+ 
 <?php if (!empty($flashes)): ?>
     <div class="mb-3">
-        <?php foreach ($flashes as $flash): ?>
+        <?php foreach ($flashes as $type => $messages): ?>
             <?php
-            $type = (string)($flash['type'] ?? 'info');
-            $msg = (string)($flash['msg'] ?? '');
-            if ($msg === '') continue;
             $bsType = $map[$type] ?? 'info';
+            $messages = is_array($messages) ? $messages : [];
             ?>
-            <div class="alert alert-<?= htmlspecialchars($bsType) ?> alert-dismissible fade show" role="alert">
-                <?= htmlspecialchars($msg) ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
-            </div>
+            <?php foreach ($messages as $msg): ?>
+                <?php if ((string) $msg === '') continue; ?>
+                <div class="alert alert-<?= htmlspecialchars($bsType) ?> alert-dismissible fade show" role="alert">
+                    <?= htmlspecialchars((string) $msg) ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+                </div>
+            <?php endforeach; ?>
         <?php endforeach; ?>
     </div>
 <?php endif; ?>

@@ -7,46 +7,36 @@ namespace App\Core;
 final class Router
 {
     private array $routes;
-    //stock toute tes routes 
 
     public function __construct(array $routes)
-    //injecte route changer route sans changer router 
     {
         $this->routes = $routes;
     }
 
     public function dispatch(string $method, string $uri): void
-    //normalise la method revoit comme method on met en majuscule
     {
         $method = strtoupper($method === 'HEAD' ? 'GET' : $method);
 
         $path = parse_url($uri, PHP_URL_PATH) ?? '/';
-        //parase analyse l url les composent a utilsie
         $path = rtrim($path, '/') ?: '/';
-        //extrait de chemin on enleve $query  uniformiser creations/2/ =>/creations/2 on en eleve /derriere
 
         $allowedMethods = [];
-        //method authorise
 
         foreach ($this->routes as [$routeMethod, $routePattern, $handler]) {
             $routeMethod = strtoupper($routeMethod);
             $routePattern = rtrim($routePattern, '/') ?: '/';
-            //parcourir les route , destructure chaque  route 
-            //mettre ordre parametre
-            //route patter  faire / creations/{id}/edit
+
             [$regex, $paramOrder] = $this->compilePattern($routePattern);
 
             if (!preg_match($regex, $path, $matches)) {
                 continue;
             }
-            //si il ne math pas il continie
+
             $allowedMethods[] = $routeMethod;
 
             if ($routeMethod !== $method) {
                 continue;
             }
-            //si c'est id on casse si on valide  slud minuscule
-            //on construit l'argument 
 
             $args = $this->buildArgs($matches, $paramOrder);
             if ($args === null) {
@@ -67,7 +57,7 @@ final class Router
                 $this->notFound("Action introuvable : $action");
                 return;
             }
-            //...arg prend l'action show build id lui passe id dans l'url en intenger dans show 
+
             $controller->$action(...$args);
             return;
         }
@@ -75,7 +65,6 @@ final class Router
             $this->methodNotAllowed($allowedMethods);
             return;
         }
-        //si la method n'est pas vide on envoie 405
         $this->notFound();
     }
 
@@ -121,16 +110,13 @@ final class Router
         }
         return $args;
     }
-    //validation sluf
+
     private function isValidSlug(string $slug): bool
     {
         if ($slug === '') {
             return false;
         }
         if (!preg_match('#^[a-z0-9-]+$#', $slug)) {
-            //autorise des slug en chiffres 
-            //une chains een bois => une -chaise -en -bois 
-            //titre libraire game og throne  parie 2 slug game-of-throne-partie-2
             return false;
         }
         if ($slug[0] === '-' || $slug[strlen($slug) - 1] === '-') {
