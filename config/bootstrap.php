@@ -19,6 +19,10 @@ define('PUBLIC_PATH', APP_ROOT . '/public');
 /**
  * 1) Autoload Composer (PSR-4 + dependance)
  */
+define('CREATIONS_UPLOAD_DIR', PUBLIC_PATH . '/assets/img/creations');
+define('CREATIONS_PUBLIC_PREFIX', '/assets/img/creations');
+
+
 require_once APP_ROOT . '/vendor/autoload.php';
 
 //charger variable.env

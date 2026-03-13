@@ -6,14 +6,17 @@ namespace App\Controllers;
 
 use App\Entities\Creation;
 use App\Models\CreationModel;
+use App\Service\ImageUploader;
 
 final class CreationController extends Controller
 {
     private CreationModel $model;
+    private ImageUploader $uploader;
 
     public function __construct()
     {
         $this->model = new CreationModel();
+        $this->uploader = new ImageUploader();
     }
 
     public function index(): void
@@ -56,18 +59,30 @@ final class CreationController extends Controller
         $this->requirePost();
         $this->requireCsrf('create_creation');
 
-        [$title, $description, $picture] = $this->getPostedData();
+        [$title, $description] = $this->getPostedData();
 
         if ($title === '' || $description === '') {
             $this->render('creation/create', [
                 'pageTitle' => 'Créer',
                 'error' => 'Titre et description obligatoires.',
-                'old' => ['title' => $title, 'description' => $description, 'picture' => $picture ?? ''],
+                'old' => ['title' => $title, 'description' => $description, 'picture' => ''],
             ]);
             return;
         }
 
-        $creation = $this->buildEntity($title, $description, $picture);
+        // Upload (optionnel) + filename slug-0001.webp
+        try {
+            $filename = $this->uploader->uploadCreationWebp('picture', $title);
+        } catch (\RuntimeException $e) {
+            $this->render('creation/create', [
+                'pageTitle' => 'Créer',
+                'error' => $e->getMessage(),
+                'old' => ['title' => $title, 'description' => $description, 'picture' => ''],
+            ]);
+            return;
+        }
+
+        $creation = $this->buildEntity($title, $description, $filename !== '' ? $filename : null);
 
         $created = $this->model->insert($creation);
 
@@ -99,19 +114,38 @@ final class CreationController extends Controller
         $this->requirePost();
         $this->requireCsrf('edit_creation_' . $id);
 
-        [$title, $description, $picture] = $this->getPostedData();
+        [$title, $description] = $this->getPostedData();
 
         if ($title === '' || $description === '') {
             $this->render('creation/edit', [
                 'pageTitle' => 'Modifier',
                 'creation' => $creation,
                 'error' => 'Titre et description obligatoires.',
-                'old' => ['title' => $title, 'description' => $description, 'picture' => $picture ?? ''],
+                'old' => ['title' => $title, 'description' => $description, 'picture' => $creation->getPicture() ?? ''],
             ]);
             return;
         }
 
-        $toUpdate = $this->buildEntity($title, $description, $picture);
+        // Upload en remplacement : supprime l'ancienne image si une nouvelle image est envoyée
+        $existing = $creation->getPicture();
+
+        try {
+            $filename = $this->uploader->uploadCreationWebp('picture', $title, $existing);
+        } catch (\RuntimeException $e) {
+            $this->render('creation/edit', [
+                'pageTitle' => 'Modifier',
+                'creation' => $creation,
+                'error' => $e->getMessage(),
+                'old' => [
+                    'title' => $title,
+                    'description' => $description,
+                    'picture' => $existing ?? '',
+                ],
+            ]);
+            return;
+        }
+
+        $toUpdate = $this->buildEntity($title, $description, $filename !== '' ? $filename : null);
         $updated = $this->model->update($id, $toUpdate);
 
         if ($updated === null) {
@@ -136,16 +170,14 @@ final class CreationController extends Controller
     {
         $title = trim((string)($_POST['title'] ?? ''));
         $description = trim((string)($_POST['description'] ?? ''));
-        $picture = trim((string)($_POST['picture'] ?? ''));
-        $picture = $picture === '' ? null : $picture;
 
-        return [$title, $description, $picture];
+        return [$title, $description];
     }
 
     private function buildEntity(string $title, string $description, ?string $picture): Creation
     {
         $c = new Creation();
-        $c->setTitle($title);
+        $c->setTitle(ucwords($title));
         $c->setDescription($description);
         $c->setPicture($picture);
         return $c;

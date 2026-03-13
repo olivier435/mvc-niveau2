@@ -12,7 +12,12 @@ $csrfId = 'delete_creation_' . $creation->getIdCreation();
         <a class="btn btn-primary" href="/creations/<?= $creation->getIdCreation() ?>/edit">Modifier</a>
     </div>
 </div>
-<div class="card shadow-sm">
+<div class="card shadow-sm w-50">
+    <?php if ($creation->getPicture()): ?>
+        <img class="img-fluid rounded mb-3"
+            src="<?= htmlspecialchars(CREATIONS_PUBLIC_PREFIX . '/' . $creation->getPicture()) ?>"
+            alt="">
+    <?php endif; ?>
     <div class="card-body">
         <p class="mb-0"><?= nl2br(htmlspecialchars($creation->getDescription())) ?></p>
     </div>

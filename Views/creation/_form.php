@@ -8,7 +8,7 @@ $error = $error ?? null;
 <?php if ($error): ?>
     <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
 <?php endif; ?>
-<form method="post" action="<?= htmlspecialchars($action) ?>" class="card shadow-sm">
+<form method="post" action="<?= htmlspecialchars($action) ?>" enctype="multipart/form-data" class="card shadow-sm">
     <div class="card-body">
         <input type="hidden" name="_token" value="<?= htmlspecialchars(Csrf::token($csrfId)) ?>">
         <div class="mb-3">
@@ -28,11 +28,14 @@ $error = $error ?? null;
                 required><?= htmlspecialchars($old['description'] ?? '') ?></textarea>
         </div>
         <div class="mb-3">
-            <label class="form-label" for="picture">Image (texte pour l'instant)</label>
+            <label class="form-label" for="picture">Image </label>
             <input class="form-control"
+                type="file"
                 id="picture"
                 name="picture"
-                value="<?= htmlspecialchars($old['picture'] ?? '') ?>">
+                accept="image/jpeg, image/png.image/webp">
+            <div class="form-text">Formats: JPG, PNG, WebP. une nouvelle image remplacera l'ancienne </div>
+
         </div>
         <div class="d-flex gap-2">
             <button class="btn btn-primary"><?= htmlspecialchars($submitLabel) ?></button>

@@ -15,6 +15,12 @@
         <?php foreach ($creations as $c): ?>
             <div class="col-12 col-md-6 col-lg-4">
                 <div class="card h-100 shadow-sm">
+                    <?php if (!empty($c->getPicture())): ?>
+                        <img class="img-fluid rounded border"
+                            style="max-height: 240px;"
+                            src="<?= htmlspecialchars(CREATIONS_PUBLIC_PREFIX . '/' . $c->getPicture()) ?>"
+                            alt="">
+                    <?php endif; ?>
                     <div class="card-body">
                         <h2 class="h5"><?= htmlspecialchars($c->getTitle()) ?></h2>
                         <p class="text-muted mb-0">
