@@ -21,11 +21,18 @@ final class CreationController extends Controller
 
     public function index(): void
     {
-        $creations = $this->model->findAll();
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $limit = 6;
+        $offset = ($page - 1) * $limit;
 
+        $creations = $this->model->findPaginated($limit, $offset);
+        $total = $this->model->countAll();
+        $pages = (int) ceil($total / $limit);
         $this->render('creation/index', [
             'pageTitle' => 'Créations',
             'creations' => $creations,
+            'page' => $page,
+            'pages' => $pages,
         ]);
     }
 

@@ -57,7 +57,7 @@ final class CreationModel extends Model
         return $creation;
     }
 
-    public function update(int $id, Creation $creation): ?Creation 
+    public function update(int $id, Creation $creation): ?Creation
     {
         $stmt = $this->pdo->prepare(
             'UPDATE creation 
@@ -70,14 +70,14 @@ final class CreationModel extends Model
         $stmt->execute([
             'title' => $creation->getTitle(),
             'description' => $creation->getDescription(),
-            'picture' => $creation->getPicture(), 
+            'picture' => $creation->getPicture(),
             'id' => $id,
         ]);
 
         return $this->find($id);
     }
 
-    public function delete(int $id): bool 
+    public function delete(int $id): bool
     {
         $stmt = $this->pdo->prepare(
             'DELETE FROM creation WHERE id_creation = :id'
@@ -86,5 +86,30 @@ final class CreationModel extends Model
         $stmt->execute(['id' => $id]);
 
         return $stmt->rowCount() > 0;
+    }
+
+    public function findPagInated(int $limit, int $offset): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM creation ORDER BY created_at DESC
+        LIMIT :limit OFFSET :offset'
+        );
+
+        $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue('offset', $offset, PDO::PARAM_INT);
+
+        $stmt->execute();
+
+        $rows = $stmt->fetchAll();
+
+        return array_map(
+            fn(array $row) => Creation::createAndHydrate($row),
+            $rows
+        );
+    }
+    public function countAll(): int
+    {
+        $stmt = $this->pdo->query("SELECT COUNT(*) FROM creation");
+        return (int) $stmt->fetchColumn();
     }
 }
