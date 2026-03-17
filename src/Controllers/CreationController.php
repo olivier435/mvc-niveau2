@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Entities\Creation;
 use App\Models\CreationModel;
+use App\Service\FormValidator;
 use App\Service\ImageUploader;
 
 final class CreationController extends Controller
@@ -21,13 +22,16 @@ final class CreationController extends Controller
 
     public function index(): void
     {
-        $page = max(1, (int)($_GET['page'] ?? 1));
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+
         $limit = 6;
         $offset = ($page - 1) * $limit;
 
         $creations = $this->model->findPaginated($limit, $offset);
+
         $total = $this->model->countAll();
         $pages = (int) ceil($total / $limit);
+
         $this->render('creation/index', [
             'pageTitle' => 'Créations',
             'creations' => $creations,
@@ -56,8 +60,12 @@ final class CreationController extends Controller
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $this->render('creation/create', [
                 'pageTitle' => 'Créer',
-                'old' => ['title' => '', 'description' => '', 'picture' => ''],
-                'error' => null,
+                'old' => [
+                    'title' => '',
+                    'description' => '',
+                    'picture' => ''
+                ],
+                'errors' => [],
             ]);
             return;
         }
@@ -66,30 +74,38 @@ final class CreationController extends Controller
         $this->requirePost();
         $this->requireCsrf('create_creation');
 
-        [$title, $description] = $this->getPostedData();
+        $form = $this->validateCreationForm();
 
-        if ($title === '' || $description === '') {
+        if ($form['validator']->hasErrors()) {
             $this->render('creation/create', [
                 'pageTitle' => 'Créer',
-                'error' => 'Titre et description obligatoires.',
-                'old' => ['title' => $title, 'description' => $description, 'picture' => ''],
+                'errors' => $form['validator']->getErrors(),
+                'old' => [
+                    'title' => $form['title'],
+                    'description' => $form['description'],
+                    'picture' => ''
+                ],
             ]);
             return;
         }
 
         // Upload (optionnel) + filename slug-0001.webp
         try {
-            $filename = $this->uploader->uploadCreationWebp('picture', $title);
+            $filename = $this->uploader->uploadCreationWebp('picture', $form['title']);
         } catch (\RuntimeException $e) {
             $this->render('creation/create', [
                 'pageTitle' => 'Créer',
-                'error' => $e->getMessage(),
-                'old' => ['title' => $title, 'description' => $description, 'picture' => ''],
+                'errors' => ['picture' => $e->getMessage()],
+                'old' => [
+                    'title' => $form['title'],
+                    'description' => $form['description'],
+                    'picture' => ''
+                ],
             ]);
             return;
         }
 
-        $creation = $this->buildEntity($title, $description, $filename !== '' ? $filename : null);
+        $creation = $this->buildEntity($form['title'], $form['description'], $filename !== '' ? $filename : null);
 
         $created = $this->model->insert($creation);
 
@@ -109,11 +125,11 @@ final class CreationController extends Controller
                 'pageTitle' => 'Modifier',
                 'creation' => $creation,
                 'old' => [
-                    'title' => $creation->getTitle(),
-                    'description' => $creation->getDescription(),
+                    'title' => $creation->getTitle() ?? '',
+                    'description' => $creation->getDescription() ?? '',
                     'picture' => $creation->getPicture() ?? '',
                 ],
-                'error' => null,
+                'errors' => [],
             ]);
             return;
         }
@@ -121,14 +137,18 @@ final class CreationController extends Controller
         $this->requirePost();
         $this->requireCsrf('edit_creation_' . $id);
 
-        [$title, $description] = $this->getPostedData();
+        $form = $this->validateCreationForm();
 
-        if ($title === '' || $description === '') {
+        if ($form['validator']->hasErrors()) {
             $this->render('creation/edit', [
                 'pageTitle' => 'Modifier',
                 'creation' => $creation,
-                'error' => 'Titre et description obligatoires.',
-                'old' => ['title' => $title, 'description' => $description, 'picture' => $creation->getPicture() ?? ''],
+                'errors' => $form['validator']->getErrors(),
+                'old' => [
+                    'title' => $form['title'],
+                    'description' => $form['description'],
+                    'picture' => $creation->getPicture() ?? '',
+                ],
             ]);
             return;
         }
@@ -137,22 +157,22 @@ final class CreationController extends Controller
         $existing = $creation->getPicture();
 
         try {
-            $filename = $this->uploader->uploadCreationWebp('picture', $title, $existing);
+            $filename = $this->uploader->uploadCreationWebp('picture', $form['title'], $existing);
         } catch (\RuntimeException $e) {
             $this->render('creation/edit', [
                 'pageTitle' => 'Modifier',
                 'creation' => $creation,
-                'error' => $e->getMessage(),
+                'errors' => ['picture' => $e->getMessage()],
                 'old' => [
-                    'title' => $title,
-                    'description' => $description,
+                    'title' => $form['title'],
+                    'description' => $form['description'],
                     'picture' => $existing ?? '',
                 ],
             ]);
             return;
         }
 
-        $toUpdate = $this->buildEntity($title, $description, $filename !== '' ? $filename : null);
+        $toUpdate = $this->buildEntity($form['title'], $form['description'], $filename !== '' ? $filename : null);
         $updated = $this->model->update($id, $toUpdate);
 
         if ($updated === null) {
@@ -173,12 +193,21 @@ final class CreationController extends Controller
         $this->redirect('/creations');
     }
 
-    private function getPostedData(): array
+    private function validateCreationForm(): array
     {
-        $title = trim((string)($_POST['title'] ?? ''));
-        $description = trim((string)($_POST['description'] ?? ''));
+        $validator = new FormValidator($_POST);
 
-        return [$title, $description];
+        $validator->required('title', 'Le titre est obligatoire')
+            ->minLength('title', 3, 'Le titre doit contenir au moins 3 caractères.')
+            ->maxLength('title', 120, 'Le titre ne doit pas dépasser 120 caractères.')
+            ->required('description', 'La description est obligatoire.')
+            ->minLength('description', 10, 'La description doit contenir au moins 10 caractères.');
+
+        return [
+            'validator' => $validator,
+            'title' => trim((string)($_POST['title'] ?? '')),
+            'description' => trim((string)($_POST['description'] ?? '')),
+        ];
     }
 
     private function buildEntity(string $title, string $description, ?string $picture): Creation

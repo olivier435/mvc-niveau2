@@ -96,11 +96,18 @@ abstract class Controller
         }
         return $_SESSION['user'] ?? null;
     }
-    
+
     protected function requireRole(string $role, string $redirectTo = '/login'): void
     {
         if (!$this->isGranted($role)) {
             $this->redirect($redirectTo);
         }
     }
+    //passe rend old passe en $old method extract c'est un tableau associatif key et des valeur $key champ $old title un champ par defaut c'est vide html special char 
+    protected function old(array $old, string $key, string $default = ''): string
+    {
+        return htmlspecialchars((string)($old[$key] ?? $default), ENT_QUOTES, 'UTF-8');
+    }
 }
+//_form au lieu d'avoir value?html specialchars $old 
+//value <? ^this->old $old , title 
