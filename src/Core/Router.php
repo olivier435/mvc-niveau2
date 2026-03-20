@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use App\Service\AuthService;
+
 final class Router
 {
     private array $routes;
@@ -22,7 +24,10 @@ final class Router
 
         $allowedMethods = [];
 
-        foreach ($this->routes as [$routeMethod, $routePattern, $handler]) {
+        foreach ($this->routes as $route) {
+            [$routeMethod, $routePattern, $handler] = $route;
+            $requiredRole = $route[3] ?? null;
+
             $routeMethod = strtoupper($routeMethod);
             $routePattern = rtrim($routePattern, '/') ?: '/';
 
@@ -44,6 +49,10 @@ final class Router
                 return;
             }
 
+            if (!$this->isGranted($requiredRole)) {
+                return;
+            }
+
             [$class, $action] = $handler;
 
             if (!class_exists($class)) {
@@ -61,36 +70,76 @@ final class Router
             $controller->$action(...$args);
             return;
         }
+
         if (!empty($allowedMethods)) {
             $this->methodNotAllowed($allowedMethods);
             return;
         }
+
         $this->notFound();
+    }
+
+    private function isGranted(?string $requiredRole): bool
+    {
+        if ($requiredRole === null) {
+            return true;
+        }
+
+        $auth = new AuthService();
+
+        if ($requiredRole === '@AUTH') {
+            if (!$auth->check()) {
+                $auth->rememberTargetUrl($_SERVER['REQUEST_URI'] ?? '/');
+                header('Location: /login');
+                exit();
+            }
+
+            return true;
+        }
+
+        if (!$auth->check()) {
+            $auth->rememberTargetUrl($_SERVER['REQUEST_URI'] ?? '/');
+            header('Location: /login');
+            exit();
+        }
+
+        if (!$auth->isGranted($requiredRole)) {
+            http_response_code(403);
+            require APP_ROOT . '/Views/errors/403.php';
+            exit();
+        }
+        
+        return true;
     }
 
     private function compilePattern(string $pattern): array
     {
         $paramOrder = [];
+
         $regex = preg_replace_callback(
             '#\{(\w+)\}#',
             function (array $m) use (&$paramOrder): string {
                 $name = $m[1];
                 $paramOrder[] = $name;
+
                 return '(?P<' . $name . '>[^/]+)';
             },
             $pattern
         );
+
         return ['#^' . $regex . '$#', $paramOrder];
     }
 
     private function buildArgs(array $matches, array $paramOrder): ?array
     {
         $args = [];
+
         foreach ($paramOrder as $name) {
             $value = $matches[$name] ?? null;
             if ($value === null) {
                 return null;
             }
+
             if ($name === 'id') {
                 if (!ctype_digit($value)) {
                     return null;
@@ -98,16 +147,21 @@ final class Router
                 $args[] = (int) $value;
                 continue;
             }
+
             if ($name === 'slug') {
                 $value = strtolower($value);
+
                 if (!$this->isValidSlug($value)) {
                     return null;
                 }
+
                 $args[] = $value;
                 continue;
             }
+
             $args[] = $value;
         }
+
         return $args;
     }
 
@@ -116,15 +170,19 @@ final class Router
         if ($slug === '') {
             return false;
         }
+
         if (!preg_match('#^[a-z0-9-]+$#', $slug)) {
             return false;
         }
+
         if ($slug[0] === '-' || $slug[strlen($slug) - 1] === '-') {
             return false;
         }
+
         if (str_contains($slug, '--')) {
             return false;
         }
+
         return true;
     }
 
