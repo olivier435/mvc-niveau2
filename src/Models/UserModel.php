@@ -127,4 +127,109 @@ final class UserModel extends Model
 
         return $stmt->execute();
     }
+
+    public function updateRememberToken(int $userId, string $tokenHash, string $expiresAt): bool
+    {
+        $sql = 'UPDATE user 
+            SET remember_token_hash = :token_hash, 
+                remember_token_expires_at = :expires_at 
+            WHERE id = :id';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':token_hash', $tokenHash);
+        $stmt->bindValue('expires_at', $expiresAt);
+        $stmt->bindValue(':id', $userId, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+
+    public function clearRememberToken(int $userId): bool
+    {
+        $sql = 'UPDATE user 
+            SET remember_token_hash = NULL, 
+                remember_token_expires_at = NULL 
+            WHERE id = :id';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':id', $userId, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+
+    public function findByRememberToken(string $tokenHash): ?User
+    {
+        $sql = 'SELECT * FROM user
+            WHERE remember_token_hash = :token_hash
+            AND remember_token_expires_at IS NOT NULL
+            AND remember_token_expires_at >= NOW()
+            LIMIT 1';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':token_hash', $tokenHash);
+        $stmt->execute();
+
+        $data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$data) {
+            return null;
+        }
+
+        return User::createAndHydrate($data);
+    }
+
+    public function updateResetRequest(
+        int $userId,
+        string $selector,
+        string $tokenHash,
+        string $expiresAt
+    ): bool {
+        $sql = 'UPDATE user
+            SET reset_selector = :selector,
+                reset_token_hash = :token_hash,
+                reset_expires_at = :expires_at
+            WHERE id = :id';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':selector', $selector);
+        $stmt->bindValue(':token_hash', $tokenHash);
+        $stmt->bindValue(':expires_at', $expiresAt);
+        $stmt->bindValue(':id', $userId, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+
+    public function findByResetSelector(string $selector): ?User
+    {
+        $sql = 'SELECT * FROM user
+            WHERE reset_selector = :selector
+              AND reset_expires_at IS NOT NULL
+              AND reset_expires_at >= NOW()
+            LIMIT 1';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':selector', $selector);
+        $stmt->execute();
+
+        $data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$data) {
+            return null;
+        }
+
+        return User::createAndHydrate($data);
+    }
+
+    public function clearResetRequest(int $userId): bool
+    {
+        $sql = 'UPDATE user
+            SET reset_selector = NULL,
+                reset_token_hash = NULL,
+                reset_expires_at = NULL
+            WHERE id = :id';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':id', $userId, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
 }

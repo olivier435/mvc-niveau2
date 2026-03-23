@@ -88,7 +88,7 @@ final class AuthController extends Controller
         $user->setId($userId);
 
         $this->authService->login($user);
-        
+
         $redirectTo = $this->authService->pullTargetUrl('/');
         $this->setFlash('success', 'Compte créé, bienvenue ✅');
         $this->redirect($redirectTo);
@@ -147,6 +147,10 @@ final class AuthController extends Controller
 
         $this->authService->login($user);
 
+        if ($form['remember_me']) {
+            $this->authService->enableRememberMe($user, $this->model);
+        }
+
         $redirectTo = $this->authService->pullTargetUrl('/');
         $this->setFlash('success', 'Connexion réussie ✅');
         $this->redirect($redirectTo);
@@ -157,6 +161,9 @@ final class AuthController extends Controller
         $this->requirePost();
         $this->requireCsrf('logout');
 
+        $userId = $this->authService->id();
+
+        $this->authService->clearRememberMe($this->model, $userId);
         $this->authService->logout();
 
         $this->setFlash('success', 'Déconnexion réussie.');
@@ -209,10 +216,12 @@ final class AuthController extends Controller
                 $firstname,
                 $lastname
             );
+
             if ($passwordErrors !== []) {
-                $extraErrors['password'] = $passwordErrors[0];
+                $extraErrors['password'] = implode(' ', $passwordErrors);
             }
         }
+
         return [
             'validator' => $validator,
             'extraErrors' => $extraErrors,
@@ -243,14 +252,19 @@ final class AuthController extends Controller
             ->required('email', 'L\'email est obligatoire.')
             ->email('email', 'Le format de l\'email est invalide.')
             ->required('password', 'Le mot de passe est obligatoire.');
+
         $email = trim((string) ($_POST['email'] ?? ''));
         $password = (string) ($_POST['password'] ?? '');
+        $rememberMe = isset($_POST['remember_me']) && $_POST['remember_me'] === '1';
+
         return [
             'validator' => $validator,
             'email' => $email,
             'password' => $password,
+            'remember_me' => $rememberMe,
             'old' => [
                 'email' => $email,
+                'remember_me' => $rememberMe ? '1' : '0',
             ],
         ];
     }

@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entities\User;
+use App\Models\UserModel;
 
 final class AuthService
 {
+    private const REMEMBER_COOKIE = 'remember_me';
+    private const REMEMBER_LIFETIME = 2592000; // 30 jours
+
     public function login(User $user): void
     {
         session_regenerate_id(true);
@@ -63,7 +67,82 @@ final class AuthService
     {
         $url = $_SESSION['_auth_target'] ?? $default;
         unset($_SESSION['_auth_target']);
-        
+
         return is_string($url) ? $url : $default;
+    }
+
+    public function enableRememberMe(User $user, UserModel $userModel): void
+    {
+        $token = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $token);
+        $expiresAt = (new \DateTimeImmutable())
+            ->modify('+' . self::REMEMBER_LIFETIME . ' seconds')
+            ->format('Y-m-d H:i:s');
+
+        $userModel->updateRememberToken($user->getId(), $tokenHash, $expiresAt);
+
+        setcookie(
+            self::REMEMBER_COOKIE,
+            $token,
+            [
+                'expires' => time() + self::REMEMBER_LIFETIME,
+                'path' => '/',
+                'secure' => !empty($_SERVER['HTTPS']),
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]
+        );
+    }
+
+    public function clearRememberMe(UserModel $userModel, ?int $userId = null): void 
+    {
+        if ($userId !== null) {
+            $userModel->clearRememberToken($userId);
+        }
+
+        $this->clearRememberCookie();
+    }
+
+    public function loginFromRememberCookie(UserModel $userModel): void 
+    {
+        if ($this->check()) {
+            return;
+        }
+
+        $token = $_COOKIE[self::REMEMBER_COOKIE] ?? null;
+
+        if (!is_string($token) || $token === '') {
+            return;
+        }
+
+        $tokenHash = hash('sha256', $token);
+        $user = $userModel->findByRememberToken($tokenHash);
+
+        if ($user === null) {
+            $this->clearRememberCookie();
+            return;
+        }
+
+        $this->login($user);
+
+        // rotation du token
+        $this->enableRememberMe($user, $userModel);
+    }
+
+    private function clearRememberCookie(): void
+    {
+        setcookie(
+            self::REMEMBER_COOKIE,
+            '',
+            [
+                'expires' => time() - 3600,
+                'path' => '/',
+                'secure' => !empty($_SERVER['HTTPS']),
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]
+        );
+
+        unset($_COOKIE[self::REMEMBER_COOKIE]);
     }
 }

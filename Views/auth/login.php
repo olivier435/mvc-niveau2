@@ -29,9 +29,26 @@
             class="form-control"
             required>
     </div>
-    <button class="btn btn-primary">
-        Se connecter
-    </button>
+    <div class="d-flex mb-3 align-items-center">
+        <button class="btn btn-primary me-3">
+            Se connecter
+        </button>
+        <div class="form-check">
+            <input
+                class="form-check-input"
+                type="checkbox"
+                name="remember_me"
+                id="remember_me"
+                value="1"
+                <?= $this->old($old, 'remember_me') === '1' ? 'checked' : '' ?>>
+            <label class="form-check-label" for="remember_me">
+                Se souvenir de moi
+            </label>
+        </div>
+    </div>
+    <div class="mb-3">
+        <a href="/forgot-password">Mot de passe oublié ?</a>
+    </div>
 </form>
 <p class="mt-3">
     Pas encore de compte ?
