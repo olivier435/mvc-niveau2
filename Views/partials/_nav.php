@@ -24,6 +24,13 @@ use App\Core\Router;
                         <i class="bi bi-plus-circle"></i> Ajouter
                     </a>
                 </li>
+                <?php if ($this->getUser() && $this->getUser()['role'] === 'ROLE_ADMIN'): ?>
+                    <li class="nav-item">
+                        <a class="nav-link <?= Router::isActiveRoute('/admin') ? 'active' : '' ?>" href="/admin">
+                            <i class="bi bi-speedometer2"></i> Admin
+                        </a>
+                    </li>
+                <?php endif; ?>
             </ul>
             <!-- Zone authentification -->
             <ul class="navbar-nav ms-auto">

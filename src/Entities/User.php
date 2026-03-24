@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Entities;
 
 use App\Entities\Entity;
-use App\SessionHandler;
+
 
 class User extends Entity
 {
@@ -20,11 +20,13 @@ class User extends Entity
     private ?string $phone = null;
     private string $role = 'ROLE_USER';
     private ?\DateTimeImmutable $createdAt = null;
+    private ?\DateTimeImmutable $lastLoginAt = null;
     private ?string $rememberTokenHash = null;
-     private ?\DateTimeImmutable $rememberTokenExpiresAt = null;
-private ?string $resetSelector = null;
+    private ?\DateTimeImmutable $rememberTokenExpiresAt = null;
+    private ?string $resetSelector = null;
     private ?string $resetTokenHash = null;
     private ?\DateTimeImmutable $resetExpiresAt = null;
+   
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
@@ -179,18 +181,20 @@ private ?string $resetSelector = null;
 
     public function setRememberTokenHash(?string $hash): self
     {
-        $this->RememberTokenHash=$hash;
+        $this->rememberTokenHash = $hash;
         return $this;
     }
-    public function getRememberTokenExpiresAt():?\DateTimeImmutable{
-        return $this->rememberTokenExpiresAT;
-            }
-            public function setRememberTokenExpiresAt(string|\DateTimeImmutable|null $d):self
+      public function getRememberTokenExpiresAt(): ?\DateTimeImmutable
+        {
+        return $this->rememberTokenExpiresAt;
+         }
+    public function setRememberTokenExpiresAt(string|\DateTimeImmutable|null $d):self
             {
                  if(is_string($d)){
+
                     $d= new \DateTimeImmutable($d);
                  }
-                 $this-rememberTokenExpiresAT = $d
+                 $this->rememberTokenExpiresAt = $d;
                  return $this;
             }
 

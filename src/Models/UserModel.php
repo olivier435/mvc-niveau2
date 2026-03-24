@@ -232,4 +232,102 @@ final class UserModel extends Model
 
         return $stmt->execute();
     }
+
+    /**
+     * @return \App\Entities\User[]
+     */
+    public function findAllOrderedByCreatedAtDesc(): array
+    {
+        $sql = 'SELECT * FROM user ORDER BY created_at DESC';
+        $stmt = $this->pdo->query($sql);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        return array_map(
+            fn(array $row) => User::createAndHydrate($row),
+            $rows
+        );
+    }
+
+    public function updateAdminFields(User $user): bool
+    {
+        $sql = <<<SQL
+        UPDATE user
+        SET
+            firstname = :firstname,
+            lastname = :lastname,
+            email = :email,
+            role = :role
+        WHERE id = :id
+    SQL;
+
+        $stmt = $this->pdo->prepare($sql);
+
+        return $stmt->execute([
+            ':firstname' => $user->getFirstname(),
+            ':lastname'  => $user->getLastname(),
+            ':email'     => $user->getEmail(),
+            ':role'      => $user->getRole(),
+            ':id'        => $user->getId(),
+        ]);
+    }
+
+    public function deleteById(int $id): bool
+    {
+        $sql = 'DELETE FROM user WHERE id = :id';
+        $stmt = $this->pdo->prepare($sql);
+
+        return $stmt->execute([
+            ':id' => $id,
+        ]);
+    }
+
+    public function countAll(): int
+    {
+        $sql = 'SELECT COUNT(*) FROM user';
+        $stmt = $this->pdo->query($sql);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function countAdmins(): int
+    {
+        $sql = 'SELECT COUNT(*) FROM user WHERE role = :role';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            ':role' => 'ROLE_ADMIN',
+        ]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function countUsersOnly(): int
+    {
+        $sql = 'SELECT COUNT(*) FROM user WHERE role = :role';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            ':role' => 'ROLE_USER',
+        ]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * @return \App\Entities\User[]
+     */
+    public function getLatestUsers(int $limit = 5): array
+    {
+        $limit = max(1, $limit);
+
+        $sql = 'SELECT * FROM user ORDER BY created_at DESC LIMIT :limit';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        return array_map(
+            fn(array $row) => User::createAndHydrate($row),
+            $rows
+        );
+    }
 }
