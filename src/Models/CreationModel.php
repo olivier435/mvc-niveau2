@@ -112,4 +112,23 @@ final class CreationModel extends Model
         $stmt = $this->pdo->query("SELECT COUNT(*) FROM creation");
         return (int) $stmt->fetchColumn();
     }
+    //method 
+    public function searchForAutocomplete(string $term, int $limit = 9): array
+    {
+        $term = trim($term);
+        if ($term === '') {
+            return [];
+        }
+        $sql = 'SELECT id_creation, title
+      FROM creation
+      WHERE title LIKE :term
+      ORDER BY title ASC
+      LIMIT :limit';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':term', '%' . $term . '%');
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        //si souligne array oublie return
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

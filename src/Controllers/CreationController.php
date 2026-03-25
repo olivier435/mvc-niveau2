@@ -39,6 +39,35 @@ final class CreationController extends Controller
             'pages' => $pages,
         ]);
     }
+    public function search(): void
+    {
+        $term = trim((string) ($_GET['q'] ?? ''));
+
+        if (mb_strlen($term) < 2) {
+            $this->json([
+                'items' => [],
+            ]);
+        }
+
+        $results = $this->model->searchForAutocomplete($term, 8);
+
+        $items = array_map(
+            static function (array $row): array {
+                $id = (int) ($row['id_creation'] ?? 0);
+
+                return [
+                    'id' => $id,
+                    'title' => (string) ($row['title'] ?? ''),
+                    'url' => '/creations/' . $id,
+                ];
+            },
+            $results
+        );
+
+        $this->json([
+            'items' => $items,
+        ]);
+    }
 
     public function showById(int $id): void
     {
@@ -218,5 +247,4 @@ final class CreationController extends Controller
         $c->setPicture($picture);
         return $c;
     }
-    
 }

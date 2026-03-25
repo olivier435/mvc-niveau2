@@ -8,6 +8,39 @@
         <i class="bi bi-plus-lg"></i> Nouvelle création
     </a>
 </div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <label for="creation-search-input" class="form-label fw-semibold">
+            Rechercher une création
+        </label>
+
+        <div class="position-relative">
+            <input
+                type="search"
+                id="creation-search-input"
+                class="form-control"
+                name="q"
+                placeholder="Tapez au moins 2 caractères..."
+                autocomplete="off"
+                aria-autocomplete="list"
+                aria-controls="creation-search-results"
+                aria-expanded="false">
+
+            <div
+                id="creation-search-results"
+                class="list-group position-absolute w-100 shadow-sm d-none"
+                role="listbox"
+                aria-label="Suggestions de créations"
+                style="z-index: 1000;"></div>
+        </div>
+
+        <div class="form-text">
+            Commencez à saisir le titre d'une création pour afficher des suggestions.
+        </div>
+    </div>
+</div>
+
 <?php if (empty($creations)): ?>
     <div class="alert alert-info">Aucune création pour le moment.</div>
 <?php else: ?>

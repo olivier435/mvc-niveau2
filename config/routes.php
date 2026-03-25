@@ -10,7 +10,7 @@ use App\Controllers\DashboardController;
 use App\Controllers\PasswordResetController;
 
 return [
-    // Home
+    // Home  //path chemin
     ['GET',  '/',                          [HomeController::class, 'index']],
 
     // Dashboard admin
@@ -37,7 +37,10 @@ return [
     ['POST', '/admin/users/{id}/reset-password', [AdminUserController::class, 'sendResetLink'], 'ROLE_ADMIN'],
 
     // Creations
-    ['GET', '/creations', [CreationController::class, 'index']],   
+    ['GET', '/creations', [CreationController::class, 'index']],
+    // recherche JSON pour autocompletion
+    ['GET', '/api/creations/search',  [CreationController::class, 'search']],
+
     ['GET', '/creations/new', [CreationController::class, 'create'], 'ROLE_ADMIN'],
     ['POST', '/creations/new', [CreationController::class, 'create'], 'ROLE_ADMIN'],
     ['GET', '/creations/{id}', [CreationController::class, 'showById']],

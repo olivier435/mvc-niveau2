@@ -36,6 +36,18 @@ abstract class Controller
         exit;
     }
 
+    protected function json(array $data, int $status = 200): void
+    {
+        http_response_code($status);
+        header('Content-type: application/json; charset=UTF-8');
+
+        echo json_encode(
+            $data,
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+        );
+        exit;
+    }
+
     protected function redirectBack(string $fallback = '/'): void
     {
         $url = $_SERVER['HTTP_REFERER'] ?? $fallback;
@@ -118,7 +130,7 @@ abstract class Controller
             $this->redirect($to);
         }
     }
-    
+
     protected function denyAccess(string $message = 'Accès interdit'): void
     {
         $this->abort(403, $message);
