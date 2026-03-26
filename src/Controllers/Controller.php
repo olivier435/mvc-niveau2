@@ -39,12 +39,13 @@ abstract class Controller
     protected function json(array $data, int $status = 200): void
     {
         http_response_code($status);
-        header('Content-type: application/json; charset=UTF-8');
+        header('Content-Type: application/json; charset=UTF-8');
 
         echo json_encode(
             $data,
             JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
         );
+
         exit;
     }
 
@@ -117,6 +118,11 @@ abstract class Controller
         return $this->auth()->check();
     }
 
+    protected function isGranted(string $role): bool
+    {
+        return $this->auth()->isGranted($role);
+    }
+
     protected function requireGuest(): void
     {
         if ($this->isAuthenticated()) {
@@ -152,5 +158,15 @@ abstract class Controller
     protected function old(array $old, string $key, string $default = ''): string
     {
         return htmlspecialchars((string)($old[$key] ?? $default), ENT_QUOTES, 'UTF-8');
+    }
+
+    protected function isGrantedAny(array $roles): bool
+    {
+        foreach ($roles as $role) {
+            if ($this->isGranted($role)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

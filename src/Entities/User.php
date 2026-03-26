@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Entities;
 
 use App\Entities\Entity;
-
+use App\Security\Roles;
 
 class User extends Entity
 {
@@ -18,7 +18,9 @@ class User extends Entity
     private ?string $postalCode = null;
     private ?string $city = null;
     private ?string $phone = null;
-    private string $role = 'ROLE_USER';
+
+    private string $role = Roles::USER;
+
     private ?\DateTimeImmutable $createdAt = null;
     private ?\DateTimeImmutable $lastLoginAt = null;
     private ?string $rememberTokenHash = null;
@@ -26,7 +28,7 @@ class User extends Entity
     private ?string $resetSelector = null;
     private ?string $resetTokenHash = null;
     private ?\DateTimeImmutable $resetExpiresAt = null;
-   
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
@@ -144,8 +146,20 @@ class User extends Entity
     public function setRole(string $role): self
     {
         $role = strtoupper(trim($role));
-        $this->role = in_array($role, ['ROLE_ADMIN', 'ROLE_USER'], true) ? $role : 'ROLE_USER';
+
+        $this->role = Roles::isValid($role)
+            ? $role
+            : Roles::USER;
+
         return $this;
+    }
+
+    /**
+     * Bonus : vérification avec hiérarchie
+     */
+    public function hasRole(string $role): bool
+    {
+        return Roles::can($this->role, $role);
     }
 
     public function getCreatedAt(): ?\DateTimeImmutable
@@ -175,29 +189,68 @@ class User extends Entity
         $this->lastLoginAt = $d;
         return $this;
     }
-    public function getRememberTokenHash(): ? string{
+
+    public function getRememberTokenHash(): ?string
+    {
         return $this->rememberTokenHash;
-            }
+    }
 
     public function setRememberTokenHash(?string $hash): self
     {
         $this->rememberTokenHash = $hash;
         return $this;
     }
-      public function getRememberTokenExpiresAt(): ?\DateTimeImmutable
-        {
+
+    public function getRememberTokenExpiresAt(): ?\DateTimeImmutable
+    {
         return $this->rememberTokenExpiresAt;
-         }
-    public function setRememberTokenExpiresAt(string|\DateTimeImmutable|null $d):self
-            {
-                 if(is_string($d)){
+    }
 
-                    $d= new \DateTimeImmutable($d);
-                 }
-                 $this->rememberTokenExpiresAt = $d;
-                 return $this;
-            }
+    public function setRememberTokenExpiresAt(string|\DateTimeImmutable|null $d): self
+    {
+        if (is_string($d)) {
+            $d = new \DateTimeImmutable($d);
+        }
+        $this->rememberTokenExpiresAt = $d;
+        return $this;
+    }
 
+    public function getResetSelector(): ?string
+    {
+        return $this->resetSelector;
+    }
+
+    public function setResetSelector(?string $selector): self
+    {
+        $this->resetSelector = $selector;
+        return $this;
+    }
+
+    public function getResetTokenHash(): ?string
+    {
+        return $this->resetTokenHash;
+    }
+
+    public function setResetTokenHash(?string $hash): self
+    {
+        $this->resetTokenHash = $hash;
+        return $this;
+    }
+
+    public function getResetExpiresAt(): ?\DateTimeImmutable
+    {
+        return $this->resetExpiresAt;
+    }
+
+    public function setResetExpiresAt(string|\DateTimeImmutable|null $d): self
+    {
+        if (is_string($d)) {
+            $d = new \DateTimeImmutable($d);
+        }
+
+        $this->resetExpiresAt = $d;
+        return $this;
+    }
 
     public function toSessionArray(): array
     {
@@ -209,41 +262,4 @@ class User extends Entity
             'role' => $this->role,
         ];
     }
-    public function getResetSelector(): ?string
-    {
-        return $this->resetSelector;
-    }
- 
-    public function setResetSelector(?string $selector): self
-    {
-        $this->resetSelector = $selector;
-        return $this;
-    }
- 
-    public function getResetTokenHash(): ?string
-    {
-        return $this->resetTokenHash;
-    }
- 
-    public function setResetTokenHash(?string $hash): self
-    {
-        $this->resetTokenHash = $hash;
-        return $this;
-    }
- 
-    public function getResetExpiresAt(): ?\DateTimeImmutable
-    {
-        return $this->resetExpiresAt;
-    }
- 
-    public function setResetExpiresAt(string|\DateTimeImmutable|null $d): self
-    {
-        if (is_string($d)) {
-            $d = new \DateTimeImmutable($d);
-        }
- 
-        $this->resetExpiresAt = $d;
-        return $this;
-    }
-
 }

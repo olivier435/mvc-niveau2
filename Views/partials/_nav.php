@@ -19,11 +19,13 @@ use App\Core\Router;
                         Créations
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link <?= Router::isActiveRoute('/creations/new') ? 'active' : '' ?>" href="/creations/new">
-                        <i class="bi bi-plus-circle"></i> Ajouter
-                    </a>
-                </li>
+                <?php if ($this->getUser() && $this->getUser()['role'] === 'ROLE_ADMIN'): ?>
+                    <li class="nav-item">
+                        <a class="nav-link <?= Router::isActiveRoute('/creations/new') ? 'active' : '' ?>" href="/creations/new">
+                            <i class="bi bi-plus-circle"></i> Ajouter
+                        </a>
+                    </li>
+                <?php endif; ?>
                 <?php if ($this->getUser() && $this->getUser()['role'] === 'ROLE_ADMIN'): ?>
                     <li class="nav-item">
                         <a class="nav-link <?= Router::isActiveRoute('/admin') ? 'active' : '' ?>" href="/admin">

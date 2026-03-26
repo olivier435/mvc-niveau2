@@ -6,6 +6,7 @@ namespace App\Service;
 
 use App\Entities\User;
 use App\Models\UserModel;
+use App\Security\Roles;
 
 final class AuthService
 {
@@ -55,7 +56,7 @@ final class AuthService
             return false;
         }
 
-        return $currentRole === $role;
+        return Roles::can($currentRole, $role);
     }
 
     public function rememberTargetUrl(string $url): void
@@ -94,7 +95,7 @@ final class AuthService
         );
     }
 
-    public function clearRememberMe(UserModel $userModel, ?int $userId = null): void 
+    public function clearRememberMe(UserModel $userModel, ?int $userId = null): void
     {
         if ($userId !== null) {
             $userModel->clearRememberToken($userId);
@@ -103,7 +104,7 @@ final class AuthService
         $this->clearRememberCookie();
     }
 
-    public function loginFromRememberCookie(UserModel $userModel): void 
+    public function loginFromRememberCookie(UserModel $userModel): void
     {
         if ($this->check()) {
             return;

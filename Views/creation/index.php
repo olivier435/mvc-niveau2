@@ -4,9 +4,11 @@
 ?>
 <div class="d-flex align-items-center justify-content-between mb-3">
     <h1 class="h3 mb-0">Liste des créations</h1>
-    <a class="btn btn-primary" href="/creations/new">
-        <i class="bi bi-plus-lg"></i> Nouvelle création
-    </a>
+    <?php if ($isAdmin): ?>
+        <a class="btn btn-primary" href="/creations/new">
+            <i class="bi bi-plus-lg"></i> Nouvelle création
+        </a>
+    <?php endif; ?>
 </div>
 
 <div class="card shadow-sm border-0 mb-4">
@@ -64,9 +66,11 @@
                         <a class="btn btn-outline-primary btn-sm" href="/creations/<?= $c->getIdCreation() ?>">
                             Voir
                         </a>
-                        <a class="btn btn-outline-secondary btn-sm" href="/creations/<?= $c->getIdCreation() ?>/edit">
-                            Modifier
-                        </a>
+                        <?php if ($isAdmin): ?>
+                            <a class="btn btn-outline-secondary btn-sm" href="/creations/<?= $c->getIdCreation() ?>/edit">
+                                Modifier
+                            </a>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
